@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>irrlab diagrams</title>
+        <script src="jquery/jquery.js" type="text/javascript" charset="utf-8"></script>
+        <script src="raphael/raphael.js" type="text/javascript" charset="utf-8"></script>
+        <script src="underscore/underscore.js" type="text/javascript" charset="utf-8"></script>
+        <script src="ace/ace.js" type="text/javascript" charset="utf-8"></script>
+        <script src="js-sequence-diagrams/sequence-diagram.js" type="text/javascript" charset="utf-8"></script>
+        <style>
+            * { font-family: monofur !important; font-size: 20px; }
+            @font-face {
+                font-family: 'monofur';
+                src: url('font/monofur.ttf') format('truetype');
+            }
+            #controls {
+                position: absolute;
+                top: 10px;
+            }
+            #panels {
+                margin-top: 40px;
+            }
+            #editor {
+                position: absolute;
+                height: 90%;
+                width: 40%;
+                font-size: 20px;
+            }
+            #diagram {
+                margin-left: 40%;
+                padding-left: 10px;
+                height: 90%;
+                width: 50%;
+                left:0;
+            }
+        </style>
+    </head>
+<body>
+
+    <div id="controls">
+        <input class="theme" type="radio" name="theme" value="simple" checked>
+        <label for="simple">Simple</label>
+        <input class="theme" type="radio" name="theme" value="hand">
+        <label for="hand">Hand drawn</label>
+        <a href="#" id="download">Download as SVG</a>
+    </div>
+
+    <div id="panels">
+        <div id="editor">title: sample payment flow
+client->webserver: do checkout
+note over webserver, paymentserver: (BEGIN) payment transaction
+webserver->paymentserver: handle this payment
+paymentserver->webserver: 200 OK
+webserver->client: 200 OK
+paymentserver-->>client: (payment receipt sent)
+note left of client: check wishlist...
+note over webserver, paymentserver: (END) payment transaction</div>
+        <div id="diagram"/>
+    </div>
+
+    <script>
+        function draw() {
+            $('#diagram').html("");
+            let diagram = Diagram.parse(ace.edit("editor").getValue());
+            let value = $('input[name="theme"]:checked').val();
+            diagram.drawSVG("diagram", {theme: value});
+        }
+
+        $(document).ready(function() {
+            var editor = ace.edit("editor");
+            editor.getSession().setMode("ace/mode/plain_text");
+            editor.getSession().on('change', _.debounce(draw, 100));
+            draw();
+        });
+
+        $("#download").click(function(ev) {
+            let svg = $('#diagram').find('svg')[0];
+            let width = parseInt(svg.width.baseVal.value);
+            let height = parseInt(svg.height.baseVal.value);
+            let data = ace.edit("editor").getValue();
+            let xml = '<?xml version="1.0" encoding="utf-8" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN" "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd"><svg xmlns="http://www.w3.org/2000/svg" width="' + width + '" height="' + height + '" xmlns:xlink="http://www.w3.org/1999/xlink"><source><![CDATA[' + data + ']]></source>' + svg.innerHTML + '</svg>';
+            let a = $(this);
+            a.attr("download", "diagram.svg");
+            a.attr("href", "data:image/svg+xml," + encodeURIComponent(xml));
+        });
+
+        $(".theme").on("change", function() {
+            draw();
+        });
+    </script>
+
+</body>
+</html>
